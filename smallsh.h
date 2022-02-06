@@ -20,6 +20,31 @@ struct userInput {
 };
 
 /* --------------------------------------------------------------------------------------------------------- */
+/* Free memory for user input */
+/* --------------------------------------------------------------------------------------------------------- */
+void freeUserInput(struct userInput* cmd) {
+	// Command
+	free(cmd->command);
+	// Arguments
+	for (int i = 0; i < MAXARGS; i++) {
+		if (cmd->userArgs[i] == NULL) {
+			break;
+		}
+		else {
+			free(cmd->userArgs[i]);
+		}
+	}
+	// Input file
+	free(cmd->inputFile);
+	// Output file
+	free(cmd->outputFile);
+	// Entire user input
+	free(cmd);
+	return;
+}
+
+
+/* --------------------------------------------------------------------------------------------------------- */
 /* Takes in user input command line and parses into the user input struct */
 /* --------------------------------------------------------------------------------------------------------- */
 struct userInput* parseCommand(char* line) {
@@ -29,6 +54,13 @@ struct userInput* parseCommand(char* line) {
 	
 	// Set the command to run in the foreground by default
 	cmd->runBackground = false;
+	// Set all command details to null
+	cmd->command = NULL;
+	cmd->inputFile = NULL;
+	cmd->outputFile = NULL;
+	for (int i = 0; i < MAXARGS; i++) {
+		cmd->userArgs[i] = NULL;
+	}
 
 	// Character pointer for creating tokens
 	char* saveptr;
@@ -126,11 +158,11 @@ void getUserInput() {
 		// User entered a comment
 		return;
 	}
-	else {
-		// User entered a command, parse command into user input
-		struct userInput* cmd = parseCommand(cmdLine);
-		printf("Good one\n");
-	}
+	// User entered a command, parse command into user input
+	struct userInput* cmd = parseCommand(cmdLine);
+	printf("Good one\n");
+
+	freeUserInput(cmd);
 	free(cmdLine);
 	return;
 }
