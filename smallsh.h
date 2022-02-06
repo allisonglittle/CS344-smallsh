@@ -69,5 +69,23 @@ void getUserInput() {
 	printf(": ");
 	fflush(stdout);
 
-	return 0;
+	// Create string to hold user's input
+	char* cmdLine = NULL;
+	size_t len = 0;
+	// Read in string, if it is blank, leave function
+	if (getline(&cmdLine, &len, stdin) == 1) {
+		// Blank command
+		return;
+	}
+	else if (cmdLine[0] == '#') {
+		// User entered a comment
+		return;
+	}
+	else {
+		// User entered a command, parse command into user input
+		struct userInput* cmd = parseCommand(cmdLine);
+		printf("Good one\n");
+	}
+	free(cmdLine);
+	return;
 }
