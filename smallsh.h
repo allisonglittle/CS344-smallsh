@@ -19,8 +19,12 @@ struct userInput {
 
 /* Takes in user input command line and parses into the user input struct */
 struct userInput* parseCommand(char* line) {
+
 	// Allocate memory for user command
 	struct userInput* cmd = malloc(sizeof(struct userInput));
+	
+	// Set the command to run in the foreground by default
+	cmd->runBackground = false;
 
 	// Character pointer for creating tokens
 	char* saveptr;
@@ -31,14 +35,19 @@ struct userInput* parseCommand(char* line) {
 	strcpy(cmd->command, token); // copy token into the user input command
 
 	// Second set of tokens: arguments
-	token = strtok_r(NULL, "<", &saveptr);
-	// new pointer for tracking inside the token
-	char* saveArgPtr;
 	// Move through the arguments array
 	for (int i = 0; i < MAXARGS; i++) {
-		token = strtok_r(token, " ", &saveArgPtr);
-		// If the token is null, break out of loop
-		if (token == NULL) {
+		token = strtok_r(token, " ", &saveptr);
+		// If the token is null or input/output symbols, break out of loop
+		if (strcmp(token, "<") != 0) {
+			// There is an input file
+			break;
+		}
+		else if (strcmp(token, ">") != 0) {
+			// There is an output file
+			break;
+		}
+		else if (token == NULL) {
 			break;
 		}
 		// Assign the token string to the arguments array
@@ -46,6 +55,19 @@ struct userInput* parseCommand(char* line) {
 		strcpy(cmd->userArgs[i], token);
 	}
 
+	// If the token is an input token, save the input file
+	
+	token = strtok_r(NULL, " >", &saveptr);
+
 	// Return the user command with parsed data
 	return cmd;
+}
+
+/* Prompt user for a command input, parse command and execute */
+void getUserInput() {
+	// Prompt user
+	printf(": ");
+	fflush(stdout);
+
+	return 0;
 }
