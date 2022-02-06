@@ -4,9 +4,9 @@
 #include <string.h>
 
 /* Maximum length of a user's command line */
-#define MAXCMDLENGTH = 2048
+#define MAXCMDLENGTH 2048
 /* Maximum number of arguments */
-#define MAXARGS = 512
+#define MAXARGS 512
 
 /* Struct to hold user's command */
 struct userInput {
