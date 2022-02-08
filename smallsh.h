@@ -1,8 +1,14 @@
+/*
+Author: Allison Little
+Course: OSU CS344 Winter 2022
+Assignment 3 - smallsh
+*/
+
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "commands.h"
+//#include "commands.h"
 #include <signal.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -16,9 +22,13 @@
 /* Maximum number of background processes */
 #define MAXBGPROCESSES 100
 
+/* --------------------------------------------------------------------------------------------------------- */
 /* Global variables */
+/* --------------------------------------------------------------------------------------------------------- */
+/* Array of PIDs of background processes */
 pid_t backgroundProcesses[MAXBGPROCESSES] = { 0 };
-
+/* Boolean for if the process can run processes in the background */
+bool canRunInBackground = true;
 
 /* --------------------------------------------------------------------------------------------------------- */
 /* Struct to hold user's command */
