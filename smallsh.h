@@ -160,6 +160,22 @@ struct userInput* parseCommand(char* line) {
 }
 
 /* --------------------------------------------------------------------------------------------------------- */
+/* Custom command: exit */
+/*	Terminates all background children processes and parent process */
+/* --------------------------------------------------------------------------------------------------------- */
+void exitProcess() {
+	// Move through all background processes
+	for (int i = 0; i < MAXBGPROCESSES; i++) {
+		if (backgroundProcesses[i] > 0) {
+			// Terminate background process
+			kill(backgroundProcesses[i], SIGTERM);
+		}
+	}
+	// Exit parent process
+	exit(0);
+}
+
+/* --------------------------------------------------------------------------------------------------------- */
 /* Prompt user for a command input, parse command and execute */
 /* --------------------------------------------------------------------------------------------------------- */
 void getUserInput() {
@@ -181,7 +197,14 @@ void getUserInput() {
 	}
 	// User entered a command, parse command into user input
 	struct userInput* cmd = parseCommand(cmdLine);
-	printf("Good one\n");
+	
+	// Check for custom commands
+	if (strcmp(cmd->command, "exit") == 0) {
+		exitProcess();
+	}
+	else {
+		printf("Running command - not yet programmed\n");
+	}
 
 	freeUserInput(cmd);
 	free(cmdLine);
