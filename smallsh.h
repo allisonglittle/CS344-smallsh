@@ -2,11 +2,23 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "commands.h"
+#include <signal.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <fcntl.h>
 
 /* Maximum length of a user's command line */
 #define MAXCMDLENGTH 2048
 /* Maximum number of arguments */
 #define MAXARGS 512
+/* Maximum number of background processes */
+#define MAXBGPROCESSES 100
+
+/* Global variables */
+pid_t backgroundProcesses[MAXBGPROCESSES] = { 0 };
+
 
 /* --------------------------------------------------------------------------------------------------------- */
 /* Struct to hold user's command */
@@ -42,7 +54,6 @@ void freeUserInput(struct userInput* cmd) {
 	free(cmd);
 	return;
 }
-
 
 /* --------------------------------------------------------------------------------------------------------- */
 /* Takes in user input command line and parses into the user input struct */
