@@ -11,6 +11,10 @@ int main() {
 	// Parent process should ignore SIGINT
 	ignore_action.sa_handler = SIG_IGN;
 	sigaction(SIGINT, &ignore_action, NULL);
+	// Set up SIGTSTP_action struct to custom handler
+	SIGTSTP_action.sa_handler = handle_SIGTSTP;
+	SIGTSTP_action.sa_flags = SA_RESTART;
+	sigaction(SIGTSTP, &SIGTSTP_action, NULL);
 
 	while (1) {
 		getUserInput();

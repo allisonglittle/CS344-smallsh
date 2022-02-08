@@ -28,7 +28,28 @@ Assignment 3 - smallsh
 /* Array of PIDs of background processes */
 pid_t backgroundProcesses[MAXBGPROCESSES] = { 0 };
 /* Boolean for if the process can run processes in the background */
-bool canRunInBackground = true;
+bool foregroundOnlyMode = false;
+
+/* --------------------------------------------------------------------------------------------------------- */
+/* Custom signal handler for SIGTSTP */
+/* --------------------------------------------------------------------------------------------------------- */
+void handle_SIGTSTP(int signo) {
+	// Check starting status of foreground-only mode
+	if (foregroundOnlyMode) {
+		// Turn off foreground only mode
+		foregroundOnlyMode = false;
+		char* message = "\nExiting foreground-only mode\n";
+		write(STDOUT_FILENO, message, 31);
+		return;
+	}
+	else {
+		// Turn on foreground only mode
+		foregroundOnlyMode = true;
+		char* message = "\nEntering foreground-only mode (& ignored)\n";
+		write(STDOUT_FILENO, message, 44);
+		return;
+	}
+}
 
 /* --------------------------------------------------------------------------------------------------------- */
 /* Struct to hold user's command */
