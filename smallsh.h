@@ -235,6 +235,60 @@ void returnStatus() {
 	return;
 }
 
+/* --------------------------------------------------------------------------------------------------------- */
+/* Executing a standard command */
+/*	Uses exec and fork to create a child process */
+/* --------------------------------------------------------------------------------------------------------- */
+void standardCommand(struct userInput* cmd) {
+	// Count the number of arguements in user's command
+	int argCount = 0;
+	for (int i = 0; i < MAXARGS; i++) {
+		if (cmd->userArgs[i] != NULL) {
+			argCount++;
+		}
+		else {
+			break;
+		}
+	}
+	// Create an array to contain the command and user's arguments
+	char* cmdArg[argCount + 2];
+	// First value: command
+	cmdArg[0] = cmd->command;
+	// Next values: the user's arguements
+	for (int i = 0; i < argCount; i++) {
+		cmdArg[i + 1] = cmd->userArgs[i];
+	}
+	// Last value: NULL
+	cmdArg[argCount + 1] = NULL;
+	
+	// Fork a new process
+	pid_t spawnPid = fork();
+
+	switch (spawnPid) {
+	case -1:
+		// Fork unsuccessful
+		perror("fork()\n");
+		exit(1);
+		break;
+	case 0:
+		// In the child process, execute the command
+		execvp(cmdArg[0], cmdArg);
+		// If there is an error with the execution
+		perror("execvp");
+		fflush(stdout);
+		exitStatus = 1;
+		exit(2);
+		break;
+	default:
+		// In the parent process, wait for termination
+		spawnPid = waitpid(spawnPid, &exitStatus, 0);
+		break;
+	}
+	fflush(stdout);
+	return;
+}
+
+
 
 /* --------------------------------------------------------------------------------------------------------- */
 /* Prompt user for a command input, parse command and execute */
@@ -269,8 +323,9 @@ void getUserInput() {
 	else if (strcmp(cmd->command, "status") == 0) {
 		returnStatus();
 	}
+	// Run a standard command
 	else {
-		printf("Running command - not yet programmed\n");
+		standardCommand(cmd);
 	}
 
 	freeUserInput(cmd);
