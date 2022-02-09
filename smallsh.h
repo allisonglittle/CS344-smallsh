@@ -54,6 +54,22 @@ void handle_SIGTSTP(int signo) {
 }
 
 /* --------------------------------------------------------------------------------------------------------- */
+/* Custom signal handler for SIGINT */
+/*   Only used for foreground child processes */
+/* --------------------------------------------------------------------------------------------------------- */
+void handle_SIGINT(int signo) {
+	// Process was terminated, send message
+	char* message[40];
+	sprintf(message, "\nProcess terminated by signal % d\n", signo);
+	write(STDOUT_FILENO, message, 41);
+	fflush(stdout);
+	// Update exit status
+	exitStatus = signo;
+	exit(2);
+}
+
+
+/* --------------------------------------------------------------------------------------------------------- */
 /* Struct to hold user's command */
 /* --------------------------------------------------------------------------------------------------------- */
 struct userInput {
@@ -87,6 +103,25 @@ void freeUserInput(struct userInput* cmd) {
 	free(cmd);
 	return;
 }
+
+/* --------------------------------------------------------------------------------------------------------- */
+/* Replaces $$ in a string with the process ID value */
+/* --------------------------------------------------------------------------------------------------------- */
+char* variableReplacement(char* searchText) {
+	// Check if token contains '$$'
+	char* varPtr = strstr(searchText, "$$");
+	if (varPtr != NULL) {
+		// text contains $$
+		char* saveptr;
+		char* token = strtok_r(searchText, "$$", &saveptr);
+		while (token != NULL) {
+
+		}
+	}
+	char* newString = "Placeholder";
+	return newString;
+}
+
 
 /* --------------------------------------------------------------------------------------------------------- */
 /* Takes in user input command line and parses into the user input struct */
@@ -271,7 +306,21 @@ void standardCommand(struct userInput* cmd) {
 		exit(1);
 		break;
 	case 0:
-		// In the child process, execute the command
+		// In the child process
+		// Check if background process
+		if (cmd->runBackground) {
+			// Print background pid
+			printf("Background pid: %d\n", getpid());
+			fflush(stdout);
+		}
+		else {
+			// This is a foreground process, so update process to allow SIGINT as usual
+			struct sigaction SIGINT_action = { {0} };
+			SIGINT_action.sa_handler = handle_SIGINT;
+			SIGINT_action.sa_flags = 0;
+			sigaction(SIGINT, &SIGINT_action, NULL);
+		}
+		// Execute the command
 		execvp(cmdArg[0], cmdArg);
 		// If there is an error with the execution
 		perror("execvp");
@@ -280,8 +329,25 @@ void standardCommand(struct userInput* cmd) {
 		exit(2);
 		break;
 	default:
-		// In the parent process, wait for termination
-		spawnPid = waitpid(spawnPid, &exitStatus, 0);
+		// In the parent process
+		// If this is a foreground process, do not wait for termination
+		if (cmd->runBackground) {
+			int childStatus;
+			spawnPid = waitpid(spawnPid, &childStatus, WNOHANG);
+			// Add process id to the background array
+			for (int i = 0; i < MAXBGPROCESSES; i++) {
+				if (backgroundProcesses[i] == 0) {
+					// Found a vacant background process id spot in array
+					backgroundProcesses[i] = spawnPid;
+					break;
+				}
+			}
+		}
+		else {
+			// This is a foreground process, wait for the child termiantion
+			spawnPid = waitpid(spawnPid, &exitStatus, 0);
+		}
+		
 		break;
 	}
 	fflush(stdout);
