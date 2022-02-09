@@ -230,7 +230,7 @@ void changeDirectory(struct userInput* cmd) {
 /* --------------------------------------------------------------------------------------------------------- */
 void returnStatus() {
 	// Print the most recent status
-	printf("Exit value %d", returnStatus);
+	printf("Exit value %d\n", exitStatus);
 	fflush(stdout);
 	return;
 }
