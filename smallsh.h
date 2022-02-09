@@ -29,6 +29,8 @@ Assignment 3 - smallsh
 pid_t backgroundProcesses[MAXBGPROCESSES] = { 0 };
 /* Boolean for if the process can run processes in the background */
 bool foregroundOnlyMode = false;
+/* Exit status for most recently terminated foreground child process */
+int exitStatus = 0;
 
 /* --------------------------------------------------------------------------------------------------------- */
 /* Custom signal handler for SIGTSTP */
@@ -223,6 +225,18 @@ void changeDirectory(struct userInput* cmd) {
 }
 
 /* --------------------------------------------------------------------------------------------------------- */
+/* Custom command: status */
+/*	Returns the status of the most recently terminated foreground process */
+/* --------------------------------------------------------------------------------------------------------- */
+void returnStatus() {
+	// Print the most recent status
+	printf("Exit value %d", returnStatus);
+	fflush(stdout);
+	return;
+}
+
+
+/* --------------------------------------------------------------------------------------------------------- */
 /* Prompt user for a command input, parse command and execute */
 /* --------------------------------------------------------------------------------------------------------- */
 void getUserInput() {
@@ -251,6 +265,9 @@ void getUserInput() {
 	}
 	else if (strcmp(cmd->command, "cd") == 0) {
 		changeDirectory(cmd);
+	}
+	else if (strcmp(cmd->command, "status") == 0) {
+		returnStatus();
 	}
 	else {
 		printf("Running command - not yet programmed\n");
