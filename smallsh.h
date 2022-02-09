@@ -203,7 +203,8 @@ void exitProcess() {
 void changeDirectory(struct userInput* cmd) {
 	// If there is no argument for new directory, navigate to HOME
 	if (cmd->userArgs[0] == NULL) {
-
+		// Navigate to HOME
+		chdir(getenv("HOME"));
 	}
 	else {
 		// Change directory to specified path
