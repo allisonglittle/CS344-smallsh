@@ -38,17 +38,17 @@ void handle_SIGTSTP(int signo) {
 	if (foregroundOnlyMode) {
 		// Turn off foreground only mode
 		foregroundOnlyMode = false;
-		char* message = "\nExiting foreground-only mode\n";
-		write(STDOUT_FILENO, message, 31);
-		return;
+		char* message = "\nExiting foreground-only mode\n: ";
+		write(STDOUT_FILENO, message, 33);
 	}
 	else {
 		// Turn on foreground only mode
 		foregroundOnlyMode = true;
-		char* message = "\nEntering foreground-only mode (& ignored)\n";
-		write(STDOUT_FILENO, message, 44);
-		return;
+		char* message = "\nEntering foreground-only mode (& ignored)\n: ";
+		write(STDOUT_FILENO, message, 46);
 	}
+	fflush(stdout);
+	return;
 }
 
 /* --------------------------------------------------------------------------------------------------------- */
@@ -197,6 +197,31 @@ void exitProcess() {
 }
 
 /* --------------------------------------------------------------------------------------------------------- */
+/* Custom command: cd */
+/*	Changes directory */
+/* --------------------------------------------------------------------------------------------------------- */
+void changeDirectory(struct userInput* cmd) {
+	// If there is no argument for new directory, navigate to HOME
+	if (cmd->userArgs[0] == NULL) {
+
+	}
+	else {
+		// Change directory to specified path
+		if (chdir(cmd->userArgs[0]) != 0) {
+			// There was an error, print message
+			perror("Could not change directory: ");
+			
+		}
+	}
+	// Buffer to hold current working directory path name
+	char cwd[200];
+	getcwd(cwd, sizeof(cwd));
+	printf("%s\n", cwd);
+	fflush(stdout);
+	return;
+}
+
+/* --------------------------------------------------------------------------------------------------------- */
 /* Prompt user for a command input, parse command and execute */
 /* --------------------------------------------------------------------------------------------------------- */
 void getUserInput() {
@@ -222,6 +247,9 @@ void getUserInput() {
 	// Check for custom commands
 	if (strcmp(cmd->command, "exit") == 0) {
 		exitProcess();
+	}
+	else if (strcmp(cmd->command, "cd") == 0) {
+		changeDirectory(cmd);
 	}
 	else {
 		printf("Running command - not yet programmed\n");
