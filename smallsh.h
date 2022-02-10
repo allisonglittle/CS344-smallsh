@@ -344,7 +344,30 @@ void standardCommand(struct userInput* cmd) {
 					exit(EXIT_FAILURE);
 				}
 			}
-			
+		}
+
+		// Check if output file exits
+		if (cmd->outputFile != NULL) {
+			// Set up the file descriptor
+			int fdOutput = open(cmd->outputFile, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+			if (fdOutput == -1) {
+				// File could not be opened
+				perror("Output file error: ");
+				fflush(stdout);
+				exit(EXIT_FAILURE);
+			}
+			else {
+				// Set the file descriptor to close on process exit
+				fcntl(fdOutput, F_SETFD, FD_CLOEXEC);
+				// Set the file to be the standard output
+				int outputResult = dup2(fdOutput, 1);
+				if (outputResult == -1) {
+					// Print error for using this output file
+					perror("Output file error: ");
+					fflush(stdout);
+					exit(EXIT_FAILURE);
+				}
+			}
 		}
 
 		// Execute the command
