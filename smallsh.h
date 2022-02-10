@@ -59,9 +59,9 @@ void handle_SIGTSTP(int signo) {
 /* --------------------------------------------------------------------------------------------------------- */
 void handle_SIGINT(int signo) {
 	// Process was terminated, send message
-	char* message[40];
+	char message[40];
 	sprintf(message, "\nProcess terminated by signal % d\n", signo);
-	write(STDOUT_FILENO, message, 41);
+	write(STDOUT_FILENO, message, 40);
 	fflush(stdout);
 	// Update exit status
 	exitStatus = signo;
@@ -307,6 +307,7 @@ void standardCommand(struct userInput* cmd) {
 		break;
 	case 0:
 		// In the child process
+		
 		// Check if background process
 		if (cmd->runBackground) {
 			// Print background pid
@@ -320,6 +321,32 @@ void standardCommand(struct userInput* cmd) {
 			SIGINT_action.sa_flags = 0;
 			sigaction(SIGINT, &SIGINT_action, NULL);
 		}
+
+		// Check if input file exits
+		if (cmd->inputFile != NULL) {
+			// Set up the file descriptor
+			int fdInput = open(cmd->inputFile, O_RDONLY);
+			if (fdInput == -1) {
+				// File could not be opened
+				perror("Input file error: ");
+				fflush(stdout);
+				exit(EXIT_FAILURE);
+			}
+			else {
+				// Set the file descriptor to close on process exit
+				fcntl(fdInput, F_SETFD, FD_CLOEXEC);
+				// Set the file to be the standard input
+				int inputResult = dup2(fdInput, 0);
+				if (inputResult == -1) {
+					// Print error for using this input file
+					perror("Input file error: ");
+					fflush(stdout);
+					exit(EXIT_FAILURE);
+				}
+			}
+			
+		}
+
 		// Execute the command
 		execvp(cmdArg[0], cmdArg);
 		// If there is an error with the execution
@@ -330,7 +357,8 @@ void standardCommand(struct userInput* cmd) {
 		break;
 	default:
 		// In the parent process
-		// If this is a foreground process, do not wait for termination
+	
+		// If this is a background process, do not wait for termination
 		if (cmd->runBackground) {
 			int childStatus;
 			spawnPid = waitpid(spawnPid, &childStatus, WNOHANG);
@@ -345,7 +373,9 @@ void standardCommand(struct userInput* cmd) {
 		}
 		else {
 			// This is a foreground process, wait for the child termiantion
-			spawnPid = waitpid(spawnPid, &exitStatus, 0);
+			int childStatus = 0;
+			spawnPid = waitpid(spawnPid, &childStatus, 0);
+			exitStatus = WEXITSTATUS(childStatus);
 		}
 		
 		break;
