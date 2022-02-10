@@ -264,7 +264,13 @@ void changeDirectory(struct userInput* cmd) {
 /* --------------------------------------------------------------------------------------------------------- */
 void returnStatus() {
 	// Print the most recent status
-	printf("Exit value %d\n", exitStatus);
+	if (WIFEXITED(exitStatus)) {
+		printf("Exit value %d\n", WEXITSTATUS(exitStatus));
+	}
+	else {
+		printf("Terminated with signal %d\n", WEXITSTATUS(exitStatus));
+	}
+	
 	fflush(stdout);
 	return;
 }
