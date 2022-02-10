@@ -59,12 +59,11 @@ void handle_SIGTSTP(int signo) {
 /* --------------------------------------------------------------------------------------------------------- */
 void handle_SIGINT(int signo) {
 	// Process was terminated, send message
-	char message[40];
-	sprintf(message, "\nProcess terminated by signal % d\n", signo);
+	char message[40] = "Process terminated";
+	// sprintf(message, "\nProcess terminated by signal % d\n", signo);
 	write(STDOUT_FILENO, message, 40);
 	fflush(stdout);
-	// Update exit status
-	exitStatus = signo;
+	// Exit with signal 2
 	exit(2);
 }
 
@@ -309,7 +308,7 @@ void standardCommand(struct userInput* cmd) {
 		// In the child process
 		
 		// Check if background process
-		if (cmd->runBackground) {
+		if (cmd->runBackground && !foregroundOnlyMode) {
 			// Print background pid
 			printf("Background pid: %d\n", getpid());
 			fflush(stdout);
@@ -318,7 +317,7 @@ void standardCommand(struct userInput* cmd) {
 			// This is a foreground process, so update process to allow SIGINT as usual
 			struct sigaction SIGINT_action = { {0} };
 			SIGINT_action.sa_handler = handle_SIGINT;
-			SIGINT_action.sa_flags = 0;
+			SIGINT_action.sa_flags = SA_RESTART;
 			sigaction(SIGINT, &SIGINT_action, NULL);
 		}
 
@@ -375,16 +374,13 @@ void standardCommand(struct userInput* cmd) {
 		// If there is an error with the execution
 		perror("execvp");
 		fflush(stdout);
-		exitStatus = 1;
-		exit(2);
+		exit(EXIT_FAILURE);
 		break;
 	default:
 		// In the parent process
 	
-		// If this is a background process, do not wait for termination
-		if (cmd->runBackground) {
-			int childStatus;
-			spawnPid = waitpid(spawnPid, &childStatus, WNOHANG);
+		// If this is a background process and we are in background enabled mode, do not wait for termination
+		if (cmd->runBackground && !foregroundOnlyMode) {
 			// Add process id to the background array
 			for (int i = 0; i < MAXBGPROCESSES; i++) {
 				if (backgroundProcesses[i] == 0) {
@@ -393,6 +389,8 @@ void standardCommand(struct userInput* cmd) {
 					break;
 				}
 			}
+			int childStatus;
+			spawnPid = waitpid(spawnPid, &childStatus, WNOHANG);
 		}
 		else {
 			// This is a foreground process, wait for the child termiantion
@@ -407,7 +405,18 @@ void standardCommand(struct userInput* cmd) {
 	return;
 }
 
-
+/* --------------------------------------------------------------------------------------------------------- */
+/* Checks background processes to see if they have completed */
+/*   If they have completed, print exit status */
+/* --------------------------------------------------------------------------------------------------------- */
+void checkBackgroundProcesses() {
+	pid_t childPid = backgroundProcesses[0];
+	int childStatus;
+	waitpid(childPid, &childStatus, WNOHANG);
+	printf("ChildPID is %d\n", childPid);
+	printf("ChildStatus is %d\n", childStatus);
+	fflush(stdout);
+}
 
 /* --------------------------------------------------------------------------------------------------------- */
 /* Prompt user for a command input, parse command and execute */
@@ -423,31 +432,34 @@ void getUserInput() {
 	// Read in string, if it is blank, leave function
 	if (getline(&cmdLine, &len, stdin) == 1) {
 		// Blank command
-		return;
 	}
 	else if (cmdLine[0] == '#') {
 		// User entered a comment
-		return;
 	}
-	// User entered a command, parse command into user input
-	struct userInput* cmd = parseCommand(cmdLine);
-	
-	// Check for custom commands
-	if (strcmp(cmd->command, "exit") == 0) {
-		exitProcess();
-	}
-	else if (strcmp(cmd->command, "cd") == 0) {
-		changeDirectory(cmd);
-	}
-	else if (strcmp(cmd->command, "status") == 0) {
-		returnStatus();
-	}
-	// Run a standard command
 	else {
-		standardCommand(cmd);
+		// User entered a command, parse command into user input
+		struct userInput* cmd = parseCommand(cmdLine);
+
+		// Check for custom commands
+		if (strcmp(cmd->command, "exit") == 0) {
+			exitProcess();
+		}
+		else if (strcmp(cmd->command, "cd") == 0) {
+			changeDirectory(cmd);
+		}
+		else if (strcmp(cmd->command, "status") == 0) {
+			returnStatus();
+		}
+		// Run a standard command
+		else {
+			standardCommand(cmd);
+		}
+		freeUserInput(cmd);
+		free(cmdLine);
 	}
 
-	freeUserInput(cmd);
-	free(cmdLine);
+	// Check the background processes for completion
+	checkBackgroundProcesses();
+
 	return;
 }
