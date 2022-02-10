@@ -268,7 +268,7 @@ void returnStatus() {
 		printf("Exit value %d\n", WEXITSTATUS(exitStatus));
 	}
 	else {
-		printf("Terminated with signal %d\n", WEXITSTATUS(exitStatus));
+		printf("Terminated with signal %d\n", WTERMSIG(exitStatus));
 	}
 	
 	fflush(stdout);
@@ -313,11 +313,20 @@ void standardCommand(struct userInput* cmd) {
 	case 0:
 		// In the child process
 		
-		// Check if background process
 		if (cmd->runBackground && !foregroundOnlyMode) {
-			// Print background pid
-			printf("Background pid: %d\n", getpid());
-			fflush(stdout);
+			// This is a background process, check if input or output files are specified
+			if (cmd->inputFile == NULL) {
+				// No input file specified, direct input to /dev/null
+				int fdIn = open("/dev/null", 0);
+				fcntl(fdIn, F_SETFD, FD_CLOEXEC);
+				dup2(fdIn, 0);
+			}
+			if (cmd->outputFile == NULL) {
+				// No output file specified, direct output to /dev/null
+				int fdOut = open("/dev/null", O_WRONLY);
+				fcntl(fdOut, F_SETFD, FD_CLOEXEC);
+				dup2(fdOut, 1);
+			}
 		}
 		else {
 			// This is a foreground process, so update process to allow SIGINT as usual
@@ -387,6 +396,9 @@ void standardCommand(struct userInput* cmd) {
 	
 		// If this is a background process and we are in background enabled mode, do not wait for termination
 		if (cmd->runBackground && !foregroundOnlyMode) {
+			// Print background pid
+			printf("Background pid: %d\n", spawnPid);
+			fflush(stdout);
 			// Add process id to the background array
 			for (int i = 0; i < MAXBGPROCESSES; i++) {
 				if (backgroundProcesses[i] == 0) {

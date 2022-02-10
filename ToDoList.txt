@@ -1,0 +1,10 @@
+Variable replacement $$
+
+Background process completion message
+
+Troubleshoot ctrl+z
+
+Troubleshoot ctrl+c in child process
+If a child foreground process is killed by a signal, the parent must immediately print out 
+the number of the signal that killed it's foreground child process (see the example) before 
+prompting the user for the next command.
