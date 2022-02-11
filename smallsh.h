@@ -271,7 +271,7 @@ void changeDirectory(struct userInput* cmd) {
 		// Change directory to specified path
 		if (chdir(cmd->userArgs[0]) != 0) {
 			// There was an error, print message
-			perror("Could not change directory: ");
+			perror("Could not change directory");
 			
 		}
 	}
@@ -372,7 +372,7 @@ void standardCommand(struct userInput* cmd) {
 			int fdInput = open(cmd->inputFile, O_RDONLY);
 			if (fdInput == -1) {
 				// File could not be opened
-				perror("Input file error: ");
+				perror("Input file error");
 				fflush(stdout);
 				exit(EXIT_FAILURE);
 			}
@@ -383,7 +383,7 @@ void standardCommand(struct userInput* cmd) {
 				int inputResult = dup2(fdInput, 0);
 				if (inputResult == -1) {
 					// Print error for using this input file
-					perror("Input file error: ");
+					perror("Input file error");
 					fflush(stdout);
 					exit(EXIT_FAILURE);
 				}
@@ -396,7 +396,7 @@ void standardCommand(struct userInput* cmd) {
 			int fdOutput = open(cmd->outputFile, O_WRONLY | O_CREAT | O_TRUNC, 0644);
 			if (fdOutput == -1) {
 				// File could not be opened
-				perror("Output file error: ");
+				perror("Output file error");
 				fflush(stdout);
 				exit(EXIT_FAILURE);
 			}
@@ -407,7 +407,7 @@ void standardCommand(struct userInput* cmd) {
 				int outputResult = dup2(fdOutput, 1);
 				if (outputResult == -1) {
 					// Print error for using this output file
-					perror("Output file error: ");
+					perror("Output file error");
 					fflush(stdout);
 					exit(EXIT_FAILURE);
 				}
@@ -417,7 +417,7 @@ void standardCommand(struct userInput* cmd) {
 		// Execute the command
 		execvp(cmdArg[0], cmdArg);
 		// If there is an error with the execution
-		perror("Execution error: ");
+		perror("Execution error");
 		fflush(stdout);
 		exit(EXIT_FAILURE);
 		break;
