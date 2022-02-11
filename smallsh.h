@@ -463,12 +463,30 @@ void standardCommand(struct userInput* cmd) {
 /*   If they have completed, print exit status */
 /* --------------------------------------------------------------------------------------------------------- */
 void checkBackgroundProcesses() {
-	pid_t childPid = backgroundProcesses[0];
-	int childStatus;
-	waitpid(childPid, &childStatus, WNOHANG);
-	printf("ChildPID is %d\n", childPid);
-	printf("ChildStatus is %d\n", childStatus);
-	fflush(stdout);
+	// Loop through array of background processes
+	for (int i = 0; i < MAXBGPROCESSES; i++) {
+		if (backgroundProcesses[i] != 0) {
+			// Array contains background process ID, check if process has terminated
+			pid_t childPid;
+			int childStatus;
+			childPid = waitpid(-1, &childStatus, WNOHANG);
+
+			// If child process ID was returned, print its exit status
+			if (childPid > 0) {
+				if (WIFEXITED(childStatus)) {
+					// Print exit status
+					printf("Background pid %d is done: exit value %d\n", childPid, childStatus);
+					fflush(stdout);
+				}
+				else {
+					// Print termination signal
+					printf("Background pid %d is done: terminated by signal %d\n", childPid, childStatus);
+					fflush(stdout);
+				}
+			}
+		}
+	}
+	return;
 }
 
 /* --------------------------------------------------------------------------------------------------------- */
@@ -512,7 +530,7 @@ void getUserInput() {
 	}
 
 	// Check the background processes for completion
-	//checkBackgroundProcesses();
+	checkBackgroundProcesses();
 
 	return;
 }

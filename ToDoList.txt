@@ -1,10 +1,11 @@
-Variable replacement $$
+DONE
+	Variable replacement $$
 
 Background process completion message
 Includes error message for being killed by user
 
 Troubleshoot ctrl+z
-	When hit during a foreground sleep, could not enter any more commands
+When hit during a foreground sleep, could not enter any more commands
 
 DONE
 	Troubleshoot ctrl+c in child process
