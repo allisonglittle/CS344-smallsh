@@ -337,7 +337,7 @@ void standardCommand(struct userInput* cmd) {
 		break;
 	case 0:
 		// In the child process
-		
+
 		if (cmd->runBackground && !foregroundOnlyMode) {
 			// This is a background process, check if input or output files are specified
 			if (cmd->inputFile == NULL) {
@@ -360,6 +360,11 @@ void standardCommand(struct userInput* cmd) {
 			SIGINT_action.sa_flags = SA_RESTART;
 			sigaction(SIGINT, &SIGINT_action, NULL);
 		}
+
+		// Set up signal handlers to ignore SIGTSTP
+		struct sigaction ignore_action = { { 0 } };
+		ignore_action.sa_handler = SIG_IGN;
+		sigaction(SIGTSTP, &ignore_action, NULL);
 
 		// Check if input file exits
 		if (cmd->inputFile != NULL) {
