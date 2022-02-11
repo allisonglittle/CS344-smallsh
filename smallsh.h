@@ -104,21 +104,44 @@ void freeUserInput(struct userInput* cmd) {
 }
 
 /* --------------------------------------------------------------------------------------------------------- */
-/* Replaces $$ in a string with the process ID value */
+/* Replaces text in a string with the process ID value */
 /* --------------------------------------------------------------------------------------------------------- */
-char* variableReplacement(char* searchText) {
-	// Check if token contains '$$'
-	char* varPtr = strstr(searchText, "$$");
-	if (varPtr != NULL) {
-		// text contains $$
-		char* saveptr;
-		char* token = strtok_r(searchText, "$$", &saveptr);
-		while (token != NULL) {
+void variableReplacement(char* originalText, char* textToReplace) {
+	// Create pointers to move through the text string searching for specified text
+	char* ptrOriginal = originalText;
+	// Create a string to hold the new text
+	char newText[MAXCMDLENGTH] = { 0 };
 
+	// Check if the original text contains the specified text
+	// Continue looping until full string was searched (ptr = NULL)
+	while (true) {
+		// varPtr becomes the pointer that has specified text (if found)
+		char* varPtr = strstr(ptrOriginal, textToReplace);
+
+		// Check if pointer is not null
+		if (varPtr == NULL) {
+			// No more occurances
+			// Copy the rest of the original text into the new text
+			strcat(newText, ptrOriginal);
+			break;
 		}
+
+		// Otherwise, variable was found
+		// Copy what was in the original string before the variable into new text
+		strncat(newText, ptrOriginal, varPtr - ptrOriginal);
+		// Create string for pid value (maximum of 7 digits on 64-bit systems)
+		char pidString[8];
+		sprintf(pidString, "%d", getpid());
+		// Append pid to new text string
+		strcat(newText, pidString);
+
+		// Set the original text pointer to the length of the search string past where it was found
+		ptrOriginal = varPtr + strlen(textToReplace);
 	}
-	char* newString = "Placeholder";
-	return newString;
+
+	// Copy entirety of new text into original text
+	strcpy(originalText, newText);
+	return;
 }
 
 
@@ -126,6 +149,8 @@ char* variableReplacement(char* searchText) {
 /* Takes in user input command line and parses into the user input struct */
 /* --------------------------------------------------------------------------------------------------------- */
 struct userInput* parseCommand(char* line) {
+	// Replace all variables '$$' with the pid of the process
+	variableReplacement(line, "$$");
 
 	// Allocate memory for user command
 	struct userInput* cmd = malloc(sizeof(struct userInput));
@@ -387,7 +412,7 @@ void standardCommand(struct userInput* cmd) {
 		// Execute the command
 		execvp(cmdArg[0], cmdArg);
 		// If there is an error with the execution
-		perror("execvp");
+		perror("Execution error: ");
 		fflush(stdout);
 		exit(EXIT_FAILURE);
 		break;
@@ -414,7 +439,17 @@ void standardCommand(struct userInput* cmd) {
 			// This is a foreground process, wait for the child termiantion
 			int childStatus = 0;
 			spawnPid = waitpid(spawnPid, &childStatus, 0);
-			exitStatus = WEXITSTATUS(childStatus);
+			// Check exit status of the child process
+			if (WIFSIGNALED(childStatus)) {
+				// If terminated by signal, print the signal
+				printf("\nChild process %d terminated by signal %d\n", spawnPid, childStatus);
+				fflush(stdout);
+				exitStatus = WTERMSIG(childStatus);
+			}
+			else {
+				// Process ended normally
+				exitStatus = WEXITSTATUS(childStatus);
+			}
 		}
 		
 		break;
@@ -477,7 +512,7 @@ void getUserInput() {
 	}
 
 	// Check the background processes for completion
-	checkBackgroundProcesses();
+	//checkBackgroundProcesses();
 
 	return;
 }
